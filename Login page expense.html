@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .signup-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .signup-link a {
+            text-decoration: underline;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .social-login {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .social-login button {
+            margin: 5px;
+        }
+        .form-group label {
+            display: flex;
+            align-items: center;
+        }
+        .form-group label span {
+            margin-left: 5px;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="text-center mb-4">Expense Tracker</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">
+                    Username or Email <span>📧</span>
+                </label>
+                <input type="text" class="form-control" id="username" required>
+            </div>
+            <div class="form-group position-relative">
+                <label for="password">
+                    Password <span>🔒</span>
+                </label>
+                <input type="password" class="form-control" id="password" required>
+                <span class="password-toggle" id="password-toggle">
+                    <i class="fa fa-eye"></i>
+                </span>
+            </div>
+            <div class="form-group text-right">
+                <a href="#">Forgot Password?</a>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Login Now</button>
+        </form>
+        <div class="signup-link">
+            <p>Don't have an account? <a data-toggle="modal" data-target="#signupModal">Sign up</a></p>
+        </div>
+        <div class="social-login">
+            <p>Or join with</p>
+            <button class="btn btn-danger"><span>🔴</span> Google</button>
+            <button class="btn btn-primary"><span>🔵</span> Facebook</button>
+            <button class="btn btn-info"><span>❌</span> X</button>
+        </div>
+    </div>
+
+    <!-- Sign Up Modal -->
+    <div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="signupModalLabel">Sign Up</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="signup-form">
+                        <div class="form-group">
+                            <label for="new-username">Username <span>👤</span></label>
+                            <input type="text" class="form-control" id="new-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-email">Email <span>📧</span></label>
+                            <input type="email" class="form-control" id="new-email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">Password <span>🔒</span></label>
+                            <input type="password" class="form-control" id="new-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let users = JSON.parse(localStorage.getItem('users')) || [];
+
+            function validatePassword(password) {
+                const minLength = 8;
+                const hasUpperCase = /[A-Z]/.test(password);
+                const hasLowerCase = /[a-z]/.test(password);
+                const hasNumber = /[0-9]/.test(password);
+                const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+                return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar;
+            }
+
+            $('#login-form').on('submit', function(event) {
+                event.preventDefault();
+                const username = $('#username').val();
+                const password = $('#password').val();
+
+                const user = users.find(user => user.username === username && user.password === password);
+
+                if (user) {
+                    alert("Login successful!");
+                    window.location.href = "mobile.html";
+                } else {
+                    alert("Invalid username or password.");
+                }
+            });
+
+            $('#signup-form').on('submit', function(event) {
+                event.preventDefault();
+                const newUsername = $('#new-username').val();
+                const newEmail = $('#new-email').val();
+                const newPassword = $('#new-password').val();
+
+                const userExists = users.some(user => user.username === newUsername || user.email === newEmail);
+
+                if (userExists) {
+                    alert("Username or email already exists.");
+                } else if (!validatePassword(newPassword)) {
+                    alert("Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+                } else {
+                    users.push({ username: newUsername, email: newEmail, password: newPassword });
+                    localStorage.setItem('users', JSON.stringify(users));
+                    alert("Sign up successful! Your record has been saved.");
+                    $('#signupModal').modal('hide');
+                }
+            });
+
+            // Password
+
+                        // Password visibility toggle
+                        $('#password-toggle').click(function(){
+                const passwordInput = $('#password');
+                const icon = $(this).find('i');
+
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                    setTimeout(function(){
+                        passwordInput.attr('type', 'password');
+                        icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                    }, 2000); // Hide password after 2 seconds
+                } else {
+                    passwordInput.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+        }
+        #expenseChart {
+            width: 100%;
+            max-width: 600px;
+            height: 400px; /* Ensure the height is defined */
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Expense Tracker</h1>
+        <div id="main-interface">
+            <div class="mb-4">
+                <h3>Add Expense</h3>
+                <form id="expense-form">
+                    <div class="form-group">
+                        <label for="amount">Amount (RM)</label>
+                        <input type="number" class="form-control" id="amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" class="form-control" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="add-expense-btn">Add Expense</button>
+                </form>
+            </div>
+            <div class="mb-4">
+                <h3>Expenses</h3>
+                <ul id="expense-list" class="list-group"></ul>
+            </div>
+            <div class="mb-4">
+                <h3>Summary</h3>
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+                <button class="btn btn-secondary mt-3" id="view-summary-btn">View Summary</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+
+            function displayMainInterface() {
+                $('#expense-list').empty();
+                expenses.forEach((expense, index) => {
+                    $('#expense-list').append(`
+                        <li class="list-group-item">
+                            ${expense.date} - ${expense.description}: RM${expense.amount}
+                            <button class="btn btn-danger btn-sm float-right" onclick="deleteExpense(${index})">Delete</button>
+                            <button class="btn btn-warning btn-sm float-right mr-2" onclick="editExpense(${index})">Edit</button>
+                        </li>
+                    `);
+                });
+            }
+
+            $('#expense-form').on('submit', function (event) {
+                event.preventDefault();
+                const amount = $('#amount').val();
+                const date = $('#date').val();
+                const description = $('#description').val();
+                addExpense(amount, date, description);
+                $('#expense-form')[0].reset();
+            });
+
+            function addExpense(amount, date, description) {
+                const newExpense = { amount, date, description };
+                expenses.push(newExpense);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                displayMainInterface();
+            }
+
+            window.deleteExpense = function (index) {
+                expenses.splice(index, 1);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                displayMainInterface();
+            }
+
+            window.editExpense = function (index) {
+                const expense = expenses[index];
+                $('#amount').val(expense.amount);
+                $('#date').val(expense.date);
+                $('#description').val(expense.description);
+                $('#add-expense-btn').text('Update Expense').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    expenses[index] = {
+                        amount: $('#amount').val(),
+                        date: $('#date').val(),
+                        description: $('#description').val()
+                    };
+                    localStorage.setItem('expenses', JSON.stringify(expenses));
+                    displayMainInterface();
+                    $('#expense-form')[0].reset();
+                    $('#add-expense-btn').text('Add Expense').off('click').on('click', function (event) {
+                        event.preventDefault();
+                        addExpense($('#amount').val(), $('#date').val(), $('#description').val());
+                        $('#expense-form')[0].reset();
+                    });
+                });
+            }
+
+            $('#view-summary-btn').on('click', function () {
+                viewSummary();
+            });
+
+            function viewSummary() {
+                const expenseData = { labels: [], data: [] };
+                expenses.forEach(expense => {
+                    expenseData.labels.push(expense.description);
+                    expenseData.data.push(expense.amount);
+                });
+                renderSummaryChart(expenseData);
+            }
+
+            function renderSummaryChart(expenseData) {
+                const ctx = document.getElementById('expenseChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: expenseData.labels,
+                        datasets: [{
+                            label: 'Expenses (RM)',
+                            data: expenseData.data,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return tooltipItem.label + ': RM' + tooltipItem.raw;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            displayMainInterface();
+        });
+    </script>
+</body>
+</html>
